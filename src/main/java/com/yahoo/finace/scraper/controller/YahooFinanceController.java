@@ -4,10 +4,7 @@ import com.yahoo.finace.scraper.dto.TickerDto;
 import com.yahoo.finace.scraper.service.YahooFinanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -26,8 +23,7 @@ public class YahooFinanceController {
     public List<TickerDto> getFinancialData(
             @RequestParam List<String> tickers,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        // Placeholder logic: Call the service to fetch financial data
-        return yahooFinanceService.getFinancialData(tickers, date);
+       return yahooFinanceService.getTickersAndStockPrices(tickers, date);
     }
 
     @GetMapping("/trending-tickers")
@@ -38,7 +34,7 @@ public class YahooFinanceController {
 
     @GetMapping("/latest-financial-data/{ticker}")
     public TickerDto getLatestFinancialData(@PathVariable String ticker) {
-        // Placeholder logic: Call the service to fetch latest financial data
+        // Placeholder logic: Call the service to fetch the latest financial data
         return yahooFinanceService.getLatestFinancialData(ticker);
     }
 }
