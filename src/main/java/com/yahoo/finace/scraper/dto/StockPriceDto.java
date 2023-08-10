@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -14,7 +15,9 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class StockPriceDto {
     private Long stockPriceId;
-    private LocalDate dateTime;
+    private LocalDate date;
     private BigDecimal previousClosePrice;
     private BigDecimal openPrice;
+    private boolean isMarketOpen;
+    private LocalDateTime lastUpdated;
 }

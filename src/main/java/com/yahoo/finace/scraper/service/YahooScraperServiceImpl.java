@@ -34,6 +34,11 @@ public class YahooScraperServiceImpl implements YahooScraperService {
         return tickers;
     }
 
+    public Ticker fetchData(String tickerSymbol) throws IOException {
+        Ticker ticker = scrapeTickerData(tickerSymbol);
+        return ticker;
+    }
+
     private Ticker scrapeTickerData(String symbol) throws IOException {
         String profileUrl = mapSymbolsToProfileUrl(symbol);
         String summaryUrl = mapSymbolToSummaryUrl(symbol);
@@ -96,7 +101,8 @@ public class YahooScraperServiceImpl implements YahooScraperService {
     }
 
     private String extractPreviousCloseValue(Document doc) {
-        return doc.select("[data-test=PREV_CLOSE-value]").text();
+        return doc.select("[data-test=PREV_CLOSE-value]")
+                .text();
     }
 
     private String extractOpenValue(Document doc) {

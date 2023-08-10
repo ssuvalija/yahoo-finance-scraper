@@ -17,8 +17,8 @@ public interface StockPriceRepository extends JpaRepository<StockPrice, Long> {
             "FROM ticker t\n" +
             "INNER JOIN stock_price sp ON t.ticker_id = sp.ticker_id\n" +
             "WHERE t.ticker_symbol IN (:tickers) -- List of ticker symbols\n" +
-            "  AND sp.date_time >= :date -- Desired date\n" +
-            "  AND sp.date_time < DATE_ADD(:date, INTERVAL 1 DAY) -- Next day", nativeQuery = true)
+            "  AND sp.date >= :date -- Desired date\n" +
+            "  AND sp.date < DATE_ADD(:date, INTERVAL 1 DAY) -- Next day", nativeQuery = true)
     public List<StockPrice> findStockPricesForTickersOnDate(
             @Param("tickers") List<String> tickers,
             @Param("date") LocalDate date);

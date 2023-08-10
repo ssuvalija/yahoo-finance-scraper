@@ -10,7 +10,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "stock_price")
+@Table(
+        name = "stock_price",
+        uniqueConstraints=@UniqueConstraint(columnNames={"tickerId", "date"})
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,13 +21,12 @@ import java.time.LocalDate;
 public class StockPrice extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long stockPriceId;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "tickerId")
     private Ticker ticker;
 
-    @Column(unique = true)
     private LocalDate date;
     private BigDecimal previousClosePrice;
     private BigDecimal openPrice;

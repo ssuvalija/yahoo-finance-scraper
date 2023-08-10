@@ -6,5 +6,6 @@ import java.io.IOException;
 import java.util.List;
 
 public interface YahooScraperService {
-    public List<Ticker> fetchData(List<String> tickerSymbols) throws IOException;
+    List<Ticker> fetchData(List<String> tickerSymbols) throws IOException;
+    Ticker fetchData(String tickerSymbol) throws IOException;
 }

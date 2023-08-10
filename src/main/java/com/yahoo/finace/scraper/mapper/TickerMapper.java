@@ -19,7 +19,7 @@ public class TickerMapper {
 
     public TickerDto toDto(Ticker ticker) {
         TickerDto dto = new TickerDto();
-        dto.setTickerId(ticker.getTickerId());
+        dto.setTickerId(ticker.getId());
         dto.setTickerSymbol(ticker.getTickerSymbol());
         dto.setCompanyName(ticker.getCompanyName());
         dto.setMarketCap(ticker.getMarketCap());
@@ -28,6 +28,7 @@ public class TickerMapper {
         dto.setState(ticker.getState());
         dto.setCountry(ticker.getCountry());
         dto.setNumberOfEmployees(ticker.getNumberOfEmployees());
+        dto.setLastUpdated(ticker.getUpdatedAt());
         List<StockPriceDto> stockPriceDtoList = ticker.getStockPrices().stream()
                 .map(stockPriceMapper::toDto)
                 .collect(Collectors.toList());
@@ -37,7 +38,7 @@ public class TickerMapper {
 
     public Ticker toEntity(TickerDto dto) {
         Ticker ticker = new Ticker();
-        ticker.setTickerId(dto.getTickerId());
+        ticker.setId(dto.getTickerId());
         ticker.setTickerSymbol(dto.getTickerSymbol());
         ticker.setCompanyName(dto.getCompanyName());
         ticker.setMarketCap(dto.getMarketCap());

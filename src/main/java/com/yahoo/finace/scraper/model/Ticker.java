@@ -18,7 +18,7 @@ import java.util.List;
 public class Ticker extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long tickerId;
+    private Long id;
     @Column(unique = true)
     private String tickerSymbol;
     private String companyName;
@@ -29,7 +29,7 @@ public class Ticker extends BaseEntity {
     private String country;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "ticker", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "ticker", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<StockPrice> stockPrices;
     private int numberOfEmployees;
 }

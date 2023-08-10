@@ -4,6 +4,7 @@ import com.yahoo.finace.scraper.model.StockPrice;
 import jakarta.persistence.Column;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -21,4 +22,5 @@ public class TickerDto {
     private String state;
     private String country;
     private List<StockPriceDto> stockPriceDtoList;
+    private LocalDateTime lastUpdated;
 }

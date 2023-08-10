@@ -2,6 +2,7 @@ package com.yahoo.finace.scraper.service;
 
 import com.yahoo.finace.scraper.dto.TickerDto;
 import com.yahoo.finace.scraper.mapper.TickerMapper;
+import com.yahoo.finace.scraper.model.StockPrice;
 import com.yahoo.finace.scraper.model.Ticker;
 import com.yahoo.finace.scraper.repository.StockPriceRepository;
 import com.yahoo.finace.scraper.repository.TickerRepository;
@@ -13,9 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class YahooFinanceServiceImpl implements YahooFinanceService {
@@ -47,18 +49,87 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
     public List<TickerDto> getTickersAndStockPrices(List<String> tickers, LocalDate date) {
         Set<Ticker> tickersWithStockPrices = tickerRepository.getTickersWithStockPrices(tickers, date);
 
+        //List of tickers that we are missing completely in DB
         List<String> missingSymbols = tickers.stream()
                 .filter(tickerSymbol ->
                         tickersWithStockPrices.stream()
                                 .noneMatch(ticker -> ticker.getTickerSymbol().equals(tickerSymbol)))
                 .collect(Collectors.toList());
 
+        //List of tickers that exists in DB, but we are missing data for the passed date
+        List<Ticker> missingStockPricesForTickers = tickerRepository.getTickers(missingSymbols);
+
+        //remove tickers that exist in DB
+        missingSymbols.removeIf(ms -> !missingStockPricesForTickers.stream().filter(t -> t.getTickerSymbol().equals(ms)).collect(Collectors.toList()).isEmpty());
+
+        //Get missing stock data for existing tickers
+        for (Ticker ticker : missingStockPricesForTickers) {
+            if (ticker.getStockPrices() != null && !ticker.getStockPrices().isEmpty()) {
+                //records are sorted by descending date
+                LocalDate latestRecordDate = ticker.getStockPrices().get(0).getDate();
+
+                //If passed date is before than the date of the latest record in database
+                //we have a gap, that probably means the date falls on weekend or holiday
+                //In that case we can return empty list that can be interpreted on the frontend
+                //as no data for the selected date
+
+                if (date.isBefore(latestRecordDate)) {
+                    ticker.setStockPrices(new ArrayList<>());
+                    tickersWithStockPrices.add(ticker);
+                    continue;
+                } else if (date.isAfter(latestRecordDate)) {
+                    //If passed date is after the date of the latest record in database
+                    //we should calculate the gap and download data between those two days
+                    try {
+                        Ticker updatedTicker = yahooScraperService.fetchData(ticker.getTickerSymbol());
+                        updateTicker(ticker, updatedTicker);
+
+                        List<StockPrice> stockPrices = stockPriceDownloader.downloadAndMapStockPrices(ticker, latestRecordDate, date.plusDays(1));
+                        ticker.setStockPrices(updateStockPrices(ticker.getStockPrices(), stockPrices));
+
+                    } catch (IOException ex) {
+                        logger.error("Error occurred while trying to scrape data for tickers: " + missingSymbols);
+                    }
+                }
+            }
+        }
+
+        saveTickers(missingStockPricesForTickers);
+        for (Ticker ticker: missingStockPricesForTickers) {
+            ticker.setStockPrices(ticker.getStockPrices().stream().filter(sp -> sp.getDate().equals(date)).collect(Collectors.toList()));
+        }
+        tickersWithStockPrices.addAll(missingStockPricesForTickers);
+
+
+        //Tickers data is missing, fetch the ticker and historical data
         if (!missingSymbols.isEmpty()) {
             try {
                 List<Ticker> missingTickers = yahooScraperService.fetchData(missingSymbols);
+
+                for (Ticker ticker : missingTickers) {
+                    List<StockPrice> stockPrices = stockPriceDownloader.downloadAndMapStockPrices(ticker, LocalDate.now());
+
+                    //delete today's data from historical records to avoid duplicates
+                    stockPrices.removeIf(stockPrice -> stockPrice.getDate().isEqual(LocalDate.now()));
+
+                    if (stockPrices != null && !stockPrices.isEmpty()) {
+                        if (ticker.getStockPrices() == null) {
+                            ticker.setStockPrices(new ArrayList<>());
+                        }
+
+                        ticker.setStockPrices(
+                                Stream.concat(ticker.getStockPrices().stream(), stockPrices.stream())
+                                        .sorted(Comparator.comparing(StockPrice::getDate).reversed())
+                                        .collect(Collectors.toList()));
+                    }
+                }
                 saveTickers(missingTickers);
+
+                for (Ticker ticker: missingTickers) {
+                    ticker.setStockPrices(ticker.getStockPrices().stream().filter(sp -> sp.getDate().equals(date)).collect(Collectors.toList()));
+                }
                 tickersWithStockPrices.addAll(missingTickers);
-                stockPriceDownloader.downloadAndMapStockPrices(missingTickers.get(0).getTickerSymbol(), LocalDate.now());
+
             } catch (IOException ex) {
                 logger.error("Error occurred while trying to scrape data for tickers: " + missingSymbols);
             }
@@ -70,17 +141,54 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
     @Override
     public List<String> getTrendingTickers() {
         // Placeholder logic: Fetch and return trending tickers from Yahoo Finance
-        return List.of("AAPL", "GOOGL", "MSFT"); // Replace with actual trending tickers
+        return List.of("AAPL", "GOOGL", "MSFT", "BA"); // Replace with actual trending tickers
     }
 
     @Override
     public TickerDto getLatestFinancialData(String ticker) {
-        // Placeholder logic: Fetch latest financial data for the specified ticker from Yahoo Finance
+        // Placeholder logic: Fetch the latest financial data for the specified ticker from Yahoo Finance
         return new TickerDto(); // Replace with actual TickerDto
     }
 
     @Transactional
     public void saveTickers(List<Ticker> tickers) {
         tickerRepository.saveAll(tickers);
+    }
+
+    @Transactional
+    public void saveStockPrices(List<StockPrice> prices) {
+        stockPriceRepository.saveAll(prices);
+    }
+
+    private Ticker updateTicker(Ticker oldTicker, Ticker newTicker) {
+        oldTicker.setCompanyName(newTicker.getCompanyName());
+        oldTicker.setCountry(newTicker.getCountry());
+        oldTicker.setCity(newTicker.getCity());
+        oldTicker.setState(newTicker.getState());
+        oldTicker.setYearFounded(newTicker.getYearFounded());
+        oldTicker.setNumberOfEmployees(newTicker.getNumberOfEmployees());
+        oldTicker.setMarketCap(newTicker.getMarketCap());
+        return oldTicker;
+    }
+
+    private List<StockPrice> updateStockPrices(List<StockPrice> oldStockPrices, List<StockPrice> newStockPrices) {
+        for (StockPrice newStockPrice: newStockPrices) {
+            Optional<StockPrice> existing = oldStockPrices.stream().filter(sp -> sp.getDate().equals(newStockPrice.getDate())).findFirst();
+
+            if (existing.isPresent()) {
+                updateStockPrice(existing.get(), newStockPrice);
+            } else {
+                oldStockPrices.add(newStockPrice);
+            }
+
+            Collections.reverse(oldStockPrices);
+        }
+        return oldStockPrices;
+    }
+    private StockPrice updateStockPrice(StockPrice oldStockPrice, StockPrice newStockPrice) {
+        oldStockPrice.setPreviousClosePrice(newStockPrice.getPreviousClosePrice());
+        oldStockPrice.setOpenPrice(newStockPrice.getOpenPrice());
+        oldStockPrice.setMarketOpen(newStockPrice.isMarketOpen());
+        return oldStockPrice;
     }
 }
