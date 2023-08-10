@@ -26,6 +26,7 @@ public class Ticker extends BaseEntity {
     private int yearFounded;
     private String city;
     private String state;
+    private String country;
 
     @JsonIgnore
     @OneToMany(mappedBy = "ticker", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -10,7 +10,7 @@ public class StockPriceMapper {
     public StockPriceDto toDto(StockPrice stockPrice) {
         StockPriceDto dto = new StockPriceDto();
         dto.setStockPriceId(stockPrice.getStockPriceId());
-        dto.setDateTime(stockPrice.getDateTime());
+        dto.setDateTime(stockPrice.getDate());
         dto.setPreviousClosePrice(stockPrice.getPreviousClosePrice());
         dto.setOpenPrice(stockPrice.getOpenPrice());
         return dto;
@@ -19,7 +19,7 @@ public class StockPriceMapper {
     public StockPrice toEntity(StockPriceDto dto) {
         StockPrice stockPrice = new StockPrice();
         stockPrice.setStockPriceId(dto.getStockPriceId());
-        stockPrice.setDateTime(dto.getDateTime());
+        stockPrice.setDate(dto.getDateTime());
         stockPrice.setPreviousClosePrice(dto.getPreviousClosePrice());
         stockPrice.setOpenPrice(dto.getOpenPrice());
         return stockPrice;

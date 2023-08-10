@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "stock_price")
@@ -24,7 +24,9 @@ public class StockPrice extends BaseEntity {
     @JoinColumn(name = "tickerId")
     private Ticker ticker;
 
-    private LocalDateTime dateTime;
+    @Column(unique = true)
+    private LocalDate date;
     private BigDecimal previousClosePrice;
     private BigDecimal openPrice;
+    private boolean isMarketOpen;
 }

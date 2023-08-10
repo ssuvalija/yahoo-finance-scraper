@@ -19,5 +19,6 @@ public class TickerDto {
     private int numberOfEmployees;
     private String city;
     private String state;
+    private String country;
     private List<StockPriceDto> stockPriceDtoList;
 }

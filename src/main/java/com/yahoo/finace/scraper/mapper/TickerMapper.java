@@ -26,6 +26,7 @@ public class TickerMapper {
         dto.setYearFounded(ticker.getYearFounded());
         dto.setCity(ticker.getCity());
         dto.setState(ticker.getState());
+        dto.setCountry(ticker.getCountry());
         dto.setNumberOfEmployees(ticker.getNumberOfEmployees());
         List<StockPriceDto> stockPriceDtoList = ticker.getStockPrices().stream()
                 .map(stockPriceMapper::toDto)
@@ -43,6 +44,7 @@ public class TickerMapper {
         ticker.setYearFounded(dto.getYearFounded());
         ticker.setCity(dto.getCity());
         ticker.setState(dto.getState());
+        ticker.setCountry(dto.getCountry());
         ticker.setNumberOfEmployees(dto.getNumberOfEmployees());
         return ticker;
     }

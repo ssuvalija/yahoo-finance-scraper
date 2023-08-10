@@ -5,11 +5,11 @@ import com.yahoo.finace.scraper.mapper.TickerMapper;
 import com.yahoo.finace.scraper.model.Ticker;
 import com.yahoo.finace.scraper.repository.StockPriceRepository;
 import com.yahoo.finace.scraper.repository.TickerRepository;
-import com.yahoo.finace.scraper.utils.YahooScraper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -20,25 +20,24 @@ import java.util.stream.Collectors;
 @Service
 public class YahooFinanceServiceImpl implements YahooFinanceService {
 
-    private final YahooScraper yahooScraper;
+    private final YahooScraperService yahooScraperService;
     private final TickerRepository tickerRepository;
     private final StockPriceRepository stockPriceRepository;
-    private final TickerStockPriceService tickerStockPriceService;
+    private final StockPriceDownloader stockPriceDownloader;
     private final TickerMapper tickerMapper;
     private static final Logger logger = LoggerFactory.getLogger(YahooFinanceServiceImpl.class);
 
 
     @Autowired
     public YahooFinanceServiceImpl(
-            YahooScraper yahooScraper,
+            YahooScraperService yahooScraperService,
             TickerRepository tickerRepository,
             StockPriceRepository stockPriceRepository,
-            TickerStockPriceService tickerStockPriceService,
-            TickerMapper tickerMapper) {
-        this.yahooScraper = yahooScraper;
+            StockPriceDownloader stockPriceDownloader, TickerMapper tickerMapper) {
+        this.yahooScraperService = yahooScraperService;
         this.tickerRepository = tickerRepository;
         this.stockPriceRepository = stockPriceRepository;
-        this.tickerStockPriceService = tickerStockPriceService;
+        this.stockPriceDownloader = stockPriceDownloader;
         this.tickerMapper = tickerMapper;
     }
 
@@ -56,9 +55,10 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
 
         if (!missingSymbols.isEmpty()) {
             try {
-                List<Ticker> missingTickers = yahooScraper.fetchData(missingSymbols);
-                tickerStockPriceService.saveTickers(missingTickers);
+                List<Ticker> missingTickers = yahooScraperService.fetchData(missingSymbols);
+                saveTickers(missingTickers);
                 tickersWithStockPrices.addAll(missingTickers);
+                stockPriceDownloader.downloadAndMapStockPrices(missingTickers.get(0).getTickerSymbol(), LocalDate.now());
             } catch (IOException ex) {
                 logger.error("Error occurred while trying to scrape data for tickers: " + missingSymbols);
             }
@@ -77,5 +77,10 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
     public TickerDto getLatestFinancialData(String ticker) {
         // Placeholder logic: Fetch latest financial data for the specified ticker from Yahoo Finance
         return new TickerDto(); // Replace with actual TickerDto
+    }
+
+    @Transactional
+    public void saveTickers(List<Ticker> tickers) {
+        tickerRepository.saveAll(tickers);
     }
 }
