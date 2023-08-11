@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class StockPriceDto {
+public class StockPriceResponseDto {
     private Long stockPriceId;
     private LocalDate date;
     private BigDecimal previousClosePrice;

@@ -1,6 +1,6 @@
 package com.yahoo.finace.scraper.service;
 
-import com.yahoo.finace.scraper.dto.TickerDto;
+import com.yahoo.finace.scraper.dto.TickerResponseDto;
 import com.yahoo.finace.scraper.mapper.TickerMapper;
 import com.yahoo.finace.scraper.model.StockPrice;
 import com.yahoo.finace.scraper.model.Ticker;
@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,7 +45,7 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
     // Check if data exists in the database, if not fetch from Yahoo Finance
     // Return the fetched financial data as a list of TickerDto
     @Override
-    public List<TickerDto> getTickersAndStockPrices(List<String> tickers, LocalDate date) {
+    public List<TickerResponseDto> getTickersAndStockPrices(List<String> tickers, LocalDate date) {
         Set<Ticker> tickersWithStockPrices = tickerRepository.getTickersWithStockPrices(tickers, date);
 
         //List of tickers that we are missing completely in DB
@@ -65,18 +64,17 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
         //Get missing stock data for existing tickers
         for (Ticker ticker : missingStockPricesForTickers) {
             if (ticker.getStockPrices() != null && !ticker.getStockPrices().isEmpty()) {
-                //records are sorted by descending date
-                LocalDate latestRecordDate = ticker.getStockPrices().get(0).getDate();
+                LocalDate latestRecordDate = ticker.getStockPrices().stream()
+                        .map(StockPrice::getDate)
+                        .max(Comparator.naturalOrder())
+                        .get();
 
                 //If passed date is before than the date of the latest record in database
                 //we have a gap, that probably means the date falls on weekend or holiday
                 //In that case we can return empty list that can be interpreted on the frontend
                 //as no data for the selected date
-
                 if (date.isBefore(latestRecordDate)) {
-                    ticker.setStockPrices(new ArrayList<>());
                     tickersWithStockPrices.add(ticker);
-                    continue;
                 } else if (date.isAfter(latestRecordDate)) {
                     //If passed date is after the date of the latest record in database
                     //we should calculate the gap and download data between those two days
@@ -94,7 +92,9 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
             }
         }
 
-        saveTickers(missingStockPricesForTickers);
+        if (!missingStockPricesForTickers.isEmpty()) {
+            saveTickers(missingStockPricesForTickers);
+        }
         for (Ticker ticker: missingStockPricesForTickers) {
             ticker.setStockPrices(ticker.getStockPrices().stream().filter(sp -> sp.getDate().equals(date)).collect(Collectors.toList()));
         }
@@ -145,9 +145,10 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
     }
 
     @Override
-    public TickerDto getLatestFinancialData(String ticker) {
+    public TickerResponseDto getLatestFinancialData(String tickerSymbol) throws IOException {
         // Placeholder logic: Fetch the latest financial data for the specified ticker from Yahoo Finance
-        return new TickerDto(); // Replace with actual TickerDto
+        Ticker ticker = yahooScraperService.fetchData(tickerSymbol);
+        return tickerMapper.toDto(ticker);
     }
 
     @Transactional
@@ -168,13 +169,17 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
         oldTicker.setYearFounded(newTicker.getYearFounded());
         oldTicker.setNumberOfEmployees(newTicker.getNumberOfEmployees());
         oldTicker.setMarketCap(newTicker.getMarketCap());
+        List<StockPrice> updatedStockPrices = newTicker.getStockPrices();
+        for (StockPrice sp : updatedStockPrices) {
+            sp.setTicker(oldTicker);
+        }
+        oldTicker.setStockPrices(updateStockPrices(oldTicker.getStockPrices(), updatedStockPrices));
         return oldTicker;
     }
 
     private List<StockPrice> updateStockPrices(List<StockPrice> oldStockPrices, List<StockPrice> newStockPrices) {
         for (StockPrice newStockPrice: newStockPrices) {
             Optional<StockPrice> existing = oldStockPrices.stream().filter(sp -> sp.getDate().equals(newStockPrice.getDate())).findFirst();
-
             if (existing.isPresent()) {
                 updateStockPrice(existing.get(), newStockPrice);
             } else {

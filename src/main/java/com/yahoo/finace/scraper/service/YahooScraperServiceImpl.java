@@ -116,9 +116,16 @@ public class YahooScraperServiceImpl implements YahooScraperService {
         if (locationElement != null) {
             String locationText = locationElement.html();
             String[] lines = locationText.split("<br>");
-            if (lines.length >= 3) {
-                String cityStateZip = lines[1];
-                String country = lines[2];
+            int cityIndex = 1;
+            int countryIndex = 2;
+            if (lines.length >= 5) {
+                //Note: in some cases first address line takes first two lines
+                if (lines.length == 6) {
+                    cityIndex += 1;
+                    countryIndex += 1;
+                }
+                String cityStateZip = lines[cityIndex];
+                String country = lines[countryIndex];
                 result.put(COUNTRY_KEY, country);
 
                 String[] cityStateZipArray = cityStateZip.split(",");

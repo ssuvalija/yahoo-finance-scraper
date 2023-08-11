@@ -1,7 +1,7 @@
 package com.yahoo.finace.scraper.mapper;
 
-import com.yahoo.finace.scraper.dto.StockPriceDto;
-import com.yahoo.finace.scraper.dto.TickerDto;
+import com.yahoo.finace.scraper.dto.StockPriceResponseDto;
+import com.yahoo.finace.scraper.dto.TickerResponseDto;
 import com.yahoo.finace.scraper.model.Ticker;
 import org.springframework.stereotype.Component;
 
@@ -17,8 +17,8 @@ public class TickerMapper {
         this.stockPriceMapper = stockPriceMapper;
     }
 
-    public TickerDto toDto(Ticker ticker) {
-        TickerDto dto = new TickerDto();
+    public TickerResponseDto toDto(Ticker ticker) {
+        TickerResponseDto dto = new TickerResponseDto();
         dto.setTickerId(ticker.getId());
         dto.setTickerSymbol(ticker.getTickerSymbol());
         dto.setCompanyName(ticker.getCompanyName());
@@ -29,14 +29,14 @@ public class TickerMapper {
         dto.setCountry(ticker.getCountry());
         dto.setNumberOfEmployees(ticker.getNumberOfEmployees());
         dto.setLastUpdated(ticker.getUpdatedAt());
-        List<StockPriceDto> stockPriceDtoList = ticker.getStockPrices().stream()
+        List<StockPriceResponseDto> stockPriceDtoList = ticker.getStockPrices().stream()
                 .map(stockPriceMapper::toDto)
                 .collect(Collectors.toList());
         dto.setStockPriceDtoList(stockPriceDtoList);
         return dto;
     }
 
-    public Ticker toEntity(TickerDto dto) {
+    public Ticker toEntity(TickerResponseDto dto) {
         Ticker ticker = new Ticker();
         ticker.setId(dto.getTickerId());
         ticker.setTickerSymbol(dto.getTickerSymbol());

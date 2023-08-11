@@ -1,7 +1,5 @@
 package com.yahoo.finace.scraper.dto;
 
-import com.yahoo.finace.scraper.model.StockPrice;
-import jakarta.persistence.Column;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -11,7 +9,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TickerDto {
+public class TickerResponseDto {
     private Long tickerId;
     private String tickerSymbol;
     private String companyName;
@@ -21,6 +19,6 @@ public class TickerDto {
     private String city;
     private String state;
     private String country;
-    private List<StockPriceDto> stockPriceDtoList;
+    private List<StockPriceResponseDto> stockPriceDtoList;
     private LocalDateTime lastUpdated;
 }
