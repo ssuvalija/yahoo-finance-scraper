@@ -45,6 +45,7 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
     // Check if data exists in the database, if not fetch from Yahoo Finance
     // Return the fetched financial data as a list of TickerDto
     @Override
+    @Transactional
     public List<TickerResponseDto> getTickersAndStockPrices(List<String> tickers, LocalDate date) {
         Set<Ticker> tickersWithStockPrices = tickerRepository.getTickersWithStockPrices(tickers, date);
 
@@ -161,7 +162,7 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
         stockPriceRepository.saveAll(prices);
     }
 
-    private Ticker updateTicker(Ticker oldTicker, Ticker newTicker) {
+    public Ticker updateTicker(Ticker oldTicker, Ticker newTicker) {
         oldTicker.setCompanyName(newTicker.getCompanyName());
         oldTicker.setCountry(newTicker.getCountry());
         oldTicker.setCity(newTicker.getCity());

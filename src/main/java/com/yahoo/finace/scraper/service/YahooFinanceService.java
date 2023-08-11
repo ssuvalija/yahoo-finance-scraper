@@ -11,5 +11,5 @@ public interface YahooFinanceService {
     List<String> getTrendingTickers();
     TickerResponseDto getLatestFinancialData(String ticker) throws IOException;
     void saveTickers(List<Ticker> tickers);
-
+    Ticker updateTicker(Ticker oldTicker, Ticker newTicker);
 }
