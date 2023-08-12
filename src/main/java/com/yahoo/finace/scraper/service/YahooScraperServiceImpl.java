@@ -44,6 +44,12 @@ public class YahooScraperServiceImpl implements YahooScraperService {
         String summaryUrl = mapSymbolToSummaryUrl(symbol);
 
         Document profileDoc = connectToUrl(profileUrl);
+        Document summaryDoc = connectToUrl(summaryUrl);
+
+        return getTickerData(symbol, profileDoc, summaryDoc);
+    }
+
+    public Ticker getTickerData(String symbol, Document profileDoc, Document summaryDoc) {
         String companyTitle = extractCompanyTitle(profileDoc);
         String employeesNumber = extractEmployeesNumber(profileDoc);
         String yearFounded = extractYearFounded(profileDoc);
@@ -53,7 +59,6 @@ public class YahooScraperServiceImpl implements YahooScraperService {
         String country = addressInfo.get(COUNTRY_KEY);
         boolean isMarketOpen = extractIsMarketOpen(profileDoc);
 
-        Document summaryDoc = connectToUrl(summaryUrl);
         String marketCap = extractMarketCap(summaryDoc);
         String previousCloseValue = extractPreviousCloseValue(summaryDoc);
         String openValue = extractOpenValue(summaryDoc);

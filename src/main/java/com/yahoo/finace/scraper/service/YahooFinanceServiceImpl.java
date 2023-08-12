@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -78,7 +77,10 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
     @Override
     public List<String> getTrendingTickers() {
         // Placeholder logic: Fetch and return trending tickers from Yahoo Finance
-        return List.of("AAPL", "GOOGL", "MSFT", "BA"); // Replace with actual trending tickers
+        return List.of("AAPL", "GOOGL", "AMZN", "MSFT",
+                "TSLA", "META", "NVDA", "PYPL", "NFLX", "ADBE",
+                "CMG", "CRM", "SBUX", "INTC", "AMD", "ZM", "ATVI",
+                "GME", "MRNA", "DIS");
     }
 
     @Override
@@ -133,11 +135,10 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
         }
         return oldStockPrices;
     }
-    private StockPrice updateStockPrice(StockPrice oldStockPrice, StockPrice newStockPrice) {
+    private void updateStockPrice(StockPrice oldStockPrice, StockPrice newStockPrice) {
         oldStockPrice.setPreviousClosePrice(newStockPrice.getPreviousClosePrice());
         oldStockPrice.setOpenPrice(newStockPrice.getOpenPrice());
         oldStockPrice.setMarketOpen(newStockPrice.isMarketOpen());
-        return oldStockPrice;
     }
 
     private static void filterStockPricesForDate(LocalDate date, List<TickerResponseDto> result) {
@@ -159,7 +160,7 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
                     //delete today's data from historical records to avoid duplicates
                     stockPrices.removeIf(stockPrice -> stockPrice.getDate().isEqual(LocalDate.now()));
 
-                    if (stockPrices != null && !stockPrices.isEmpty()) {
+                    if (!stockPrices.isEmpty()) {
                         if (ticker.getStockPrices() == null) {
                             ticker.setStockPrices(new ArrayList<>());
                         }
@@ -213,7 +214,7 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
             saveTickers(missingStockPricesForTickers);
         }
 
-        result.addAll(missingStockPricesForTickers.stream().map(tickerMapper::toDto).collect(Collectors.toList()));
+        result.addAll(missingStockPricesForTickers.stream().map(tickerMapper::toDto).toList());
     }
 
     private static void removeTickerSymbols(List<String> missingTickersSymbols, List<Ticker> missingStockPricesForTickers) {
@@ -221,12 +222,11 @@ public class YahooFinanceServiceImpl implements YahooFinanceService {
     }
 
     private static List<String> getSymbolsForMissingTickers(List<String> tickers, Set<Ticker> tickersWithStockPrices) {
-        List<String> missingSymbols = tickers.stream()
+        return tickers.stream()
                 .filter(tickerSymbol ->
                         tickersWithStockPrices.stream()
                                 .noneMatch(ticker -> ticker.getTickerSymbol().equals(tickerSymbol)))
                 .collect(Collectors.toList());
-        return missingSymbols;
     }
 
 }
