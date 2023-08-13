@@ -12,6 +12,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,18 +53,31 @@ public class YahooFinanceController {
     }
 
     @GetMapping("/api/trending-tickers")
-    public List<String> getTrendingTickers() {
+    public ResponseEntity<ApiResponse<List<String>>> getTrendingTickers() {
         // Placeholder logic: Call the service to fetch trending tickers
-        return yahooFinanceService.getTrendingTickers();
+        ApiResponse<List<String>> response = new ApiResponse<>();
+        response.setSuccess(true);
+        response.setData(yahooFinanceService.getTrendingTickers());
+
+        return  ResponseEntity.ok(response);
+
     }
 
     @GetMapping("/api/stock-data/{ticker}")
-    public TickerResponseDto getLatestFinancialData(@PathVariable String ticker) {
+    public ResponseEntity<ApiResponse<TickerResponseDto>> getLatestFinancialData(@PathVariable String ticker) {
+        ApiResponse<TickerResponseDto> response = new ApiResponse<>();
         try {
-            return yahooFinanceService.getLatestFinancialData(ticker);
+            TickerResponseDto tickerResponseDto = yahooFinanceService.getLatestFinancialData(ticker);
+            response.setData(tickerResponseDto);
+            response.setSuccess(true);
+            return ResponseEntity.ok(response);
         } catch (IOException e) {
-            //TODO: add aspect for handling exceptions
-            throw new RuntimeException(e);
+            response.setSuccess(false);
+            List<String> errors = new ArrayList<>();
+            errors.add(e.getMessage());
+            response.setErrors(errors);
+
+            return ResponseEntity.internalServerError().body(response);
         }
     }
 }
