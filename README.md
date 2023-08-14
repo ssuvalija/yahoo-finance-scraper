@@ -43,7 +43,7 @@ The project follows a well-organized directory structure to manage different asp
 
    After the Docker container is up and running, access the MySQL instance using your preferred client (e.g., MySQL Workbench or CLI). Create a new database named **yahoo_finance**.
 
-   To allow the backend application to interact with the MySQL database, you need to configure the database credentials in the application.properties file of the application.
+   To allow the backend application to interact with the MySQL database, you need to configure the database credentials in the **application.properties** file of the application.
 
    Open the **application.properties** file and update the following properties with your MySQL database credentials:
 
@@ -55,18 +55,86 @@ The project follows a well-organized directory structure to manage different asp
 
    Replace **your-username** and **your-password** with the appropriate MySQL user credentials.
 
+3. Build and run the project:
+   ```
+   mvn clean install
+   mvn spring-boot:run
+
 ## Examples: How to Call API
 
-1. **Fetching Trending Tickers**
+1. **Fetching Stock Data**
 
-   To retrieve a list of trending tickers from the API:
+   You can fetch stock data for a list of tickers using a **POST** request to the **/api/stock-data** endpoint. Provide the date and a list of tickers in the request body. Below is an example request and response:
 
-   ```swift
-   APIManager.shared.sendRequest(path: "/trending-tickers", method: "GET") { (result: Result<TrendingTickersResponse, Error>) in
-       switch result {
-       case .success(let response):
-           // Handle the list of trending tickers in response.data
-       case .failure(let error):
-           print("Error fetching trending tickers: \(error)")
-       }
+   Request:
+
+   Endpoint: **http://localhost:8080/api/stock-data**
+
+    ```
+   {
+       "date": "2023-08-11",
+       "tickers": [
+           "AAPL",
+           "GOOGL",
+           "AMZN",
+           // ... (other tickers)
+           "META"
+       ]
+   }
+   ```
+   
+   Response example:
+   
+   ```
+   {
+       "success": true,
+       "data": [
+           {
+               "tickerId": 1,
+               "tickerSymbol": "AAPL",
+               "companyName": "Apple Inc.",
+               "marketCap": "2.796T",
+               "yearFounded": 1977,
+               "numberOfEmployees": 164000,
+               "city": "Cupertino",
+               "state": "CA",
+               "country": "United States",
+               "stockPriceDtoList": [
+                   {
+                       "stockPriceId": 2,
+                       "date": "2023-08-11",
+                       "previousClosePrice": 177.97,
+                       "openPrice": 177.32,
+                       "lastUpdated": "2023-08-12T13:23:19.695452",
+                       "marketOpen": true
+                   }
+               ],
+               "lastUpdated": "2023-08-13T19:00:55.228112"
+           },
+           {
+               "tickerId": 2,
+               "tickerSymbol": "GOOGL",
+               "companyName": "Alphabet Inc.",
+               "marketCap": "1.647T",
+               "yearFounded": 1998,
+               "numberOfEmployees": 181798,
+               "city": "Mountain View",
+               "state": "CA",
+               "country": "United States",
+               "stockPriceDtoList": [
+                   {
+                       "stockPriceId": 1260,
+                       "date": "2023-08-11",
+                       "previousClosePrice": 129.69,
+                       "openPrice": 128.66,
+                       "lastUpdated": "2023-08-12T13:23:19.895443",
+                       "marketOpen": true
+                   }
+               ],
+               "lastUpdated": "2023-08-12T13:23:19.891296"
+           },
+           .....
+          
+       ],
+       "errors": null
    }
